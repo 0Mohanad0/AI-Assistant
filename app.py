@@ -55,7 +55,7 @@ elif menu == "Login":
             st.session_state.username = username
 
         else:
-            st.error("Invalid login.")
+            st.error("fish")
 
 # DASHBOARD
 
