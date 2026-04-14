@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# VS Code workspace settings
+.vscode/
+
+# Streamlit secrets and local configuration
+.streamlit/secrets.toml
+
+# Local DB and log storage
+database/users.db
+users/
+
+# OS-specific files
+.DS_Store
+Thumbs.db

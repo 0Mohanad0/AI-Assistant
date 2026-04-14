@@ -1,33 +1,51 @@
-import json
-import os
-from datetime import datetime
+from utils.database import create_connection
+
+
+def _get_user_id(username):
+    with create_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id FROM users WHERE username=%s",
+                (username,),
+            )
+            result = cursor.fetchone()
+
+    if result:
+        return result["id"]
+
+    return None
 
 
 def log_user_data(username, entry):
+    user_id = _get_user_id(username)
+    if user_id is None:
+        return False
 
-    log_path = f"users/{username}/logs.json"
+    with create_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO logs (user_id, entry) VALUES (%s, %s)",
+                (user_id, entry),
+            )
+        conn.commit()
 
-    if not os.path.exists(log_path):
-        logs = []
-    else:
-        with open(log_path, "r") as f:
-            logs = json.load(f)
-
-    logs.append({
-        "timestamp": str(datetime.now()),
-        "entry": entry
-    })
-
-    with open(log_path, "w") as f:
-        json.dump(logs, f, indent=4)
+    return True
 
 
 def read_logs(username):
-
-    log_path = f"users/{username}/logs.json"
-
-    if not os.path.exists(log_path):
+    user_id = _get_user_id(username)
+    if user_id is None:
         return []
 
-    with open(log_path, "r") as f:
-        return json.load(f)
+    with create_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT timestamp, entry
+                FROM logs
+                WHERE user_id=%s
+                ORDER BY timestamp DESC
+                """,
+                (user_id,),
+            )
+            return cursor.fetchall()

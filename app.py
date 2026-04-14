@@ -3,9 +3,16 @@ from utils.database import create_tables
 from utils.auth import signup_user, login_user
 from utils.logger import log_user_data, read_logs
 
-create_tables()
-
 st.title("Personal AI Assistant")
+
+try:
+    create_tables()
+except Exception as exc:
+    st.error(
+        "Database startup failed. Check your DATABASE_URL and network access."
+    )
+    st.error(f"Details: {exc}")
+    st.stop()
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False

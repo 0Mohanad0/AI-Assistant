@@ -1,58 +1,46 @@
 import bcrypt
-import sqlite3
+from psycopg.errors import UniqueViolation
+
 from utils.database import create_connection
 
 
 def hash_password(password):
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(password, hashed):
-    return bcrypt.checkpw(password.encode(), hashed)
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 def signup_user(username, password):
-    conn = create_connection()
-    cursor = conn.cursor()
-
     hashed_pw = hash_password(password)
 
     try:
-        cursor.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
-            (username, hashed_pw)
-        )
-
-        conn.commit()
-
-        # Create user folder
-        import os
-        os.makedirs(f"users/{username}", exist_ok=True)
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO users (username, password) VALUES (%s, %s)",
+                    (username, hashed_pw),
+                )
+            conn.commit()
 
         return True
 
-    except:
+    except UniqueViolation:
         return False
-
-    finally:
-        conn.close()
 
 
 def login_user(username, password):
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT password FROM users WHERE username=?",
-        (username,)
-    )
-
-    result = cursor.fetchone()
-
-    conn.close()
+    with create_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT password FROM users WHERE username=%s",
+                (username,),
+            )
+            result = cursor.fetchone()
 
     if result:
-        stored_pw = result[0]
+        stored_pw = result["password"]
 
         if verify_password(password, stored_pw):
             return True
