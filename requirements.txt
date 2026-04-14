@@ -1,3 +1,5 @@
 streamlit
 bcrypt
 psycopg[binary]
+openai
+streamlit-cookies-manager
